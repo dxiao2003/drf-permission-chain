@@ -262,7 +262,7 @@ class QueryFragment(object):
 
 class ChainProcessor(object):
 
-    def get_chains(self, request=None, view=None, obj=None):
+    def get_chains(self, request, view, obj=None):
         """
         Returns a list of chains of permissions from ``request.user`` all the
         way to ``obj``.  Each chain is a tuple of elements representing a
@@ -328,10 +328,10 @@ class RecursiveChainProcessor(ChainProcessor):
         super(RecursiveChainProcessor, self).__init__(*args, **kwargs)
         self.next_chain_processor = self.next_chain_processor_class()
 
-    def get_chains(self, request=None, view=None, obj=None):
+    def get_chains(self, request, view, obj=None):
         return self.get_recursive_chains(request, view, obj)
 
-    def get_recursive_chains(self, request=None, view=None, obj=None):
+    def get_recursive_chains(self, request, view, obj=None):
         """
         Gets a permission chain by first finding all links to the next
         step in the chain, then calling the chain processor for the next links.
@@ -353,7 +353,7 @@ class RecursiveChainProcessor(ChainProcessor):
 
         return chains
 
-    def get_next_links(self, request=None, view=None, obj=None):
+    def get_next_links(self, request, view, obj=None):
         """
         Return a list of possible next links in the chain.  Each link is a
         ``(next_obj, relationship)`` tuple, where ``next_obj`` is the next
@@ -366,10 +366,10 @@ class RecursiveChainProcessor(ChainProcessor):
         """
         raise NotImplementedError
 
-    def get_chain_fragment(self, request=None, view=None):
+    def get_chain_fragment(self, request, view):
         return self.recursive_chain_fragment(request, view)
 
-    def recursive_chain_fragment(self, request=None, view=None):
+    def recursive_chain_fragment(self, request, view):
         next_prefixes = self.next_link_chain_prefixes(request, view)
         recursive_fragment = \
             self.next_chain_processor.get_chain_fragment(request, view)
@@ -387,7 +387,7 @@ class RecursiveChainProcessor(ChainProcessor):
         else:
             raise InvalidChainException("No prefixes found")
 
-    def next_link_chain_prefixes(self, request=None, view=None):
+    def next_link_chain_prefixes(self, request, view):
         """
         :returns A list of strings that can be used as prefixes to
                  QueryFragments.

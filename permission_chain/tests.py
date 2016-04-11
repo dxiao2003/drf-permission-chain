@@ -283,6 +283,10 @@ class OneRecursiveChainProcessor(RecursiveChainProcessor):
         "OBJ_EMPTY_1": ["OBJ_EMPTY_2"]
     }
 
+    def get_chains(self, request=None, view=None, obj=None):
+        return super(OneRecursiveChainProcessor, self).get_chains(request, view,
+                                                                  obj)
+
     def get_next_links(self, request=None, view=None, obj=None):
         if obj is not None:
             return self.map.get(obj, [])
@@ -304,6 +308,10 @@ class EmptyFilterArgsChainProcessor(RecursiveChainProcessor):
 class ZeroRecursiveChainProcessor(RecursiveChainProcessor):
     next_chain_processor_class = EmptyFilterArgsChainProcessor
 
+    def get_chain_fragment(self, request=None, view=None):
+        super(ZeroRecursiveChainProcessor, self).get_chain_fragment(request,
+                                                                    view)
+
     def get_next_links(self, request=None, view=None, obj=None):
         return [(("EMPTY", "NONE"),)]
 
@@ -312,6 +320,10 @@ class ZeroRecursiveChainProcessor(RecursiveChainProcessor):
 
 
 class RecursiveChainManagerTestCase(TestCase):
+
+    def setUp(self):
+        self.request = MagicMock()
+        self.view = MagicMock()
 
     one_manager = OneRecursiveChainProcessor()
 
@@ -342,8 +354,8 @@ class RecursiveChainManagerTestCase(TestCase):
     def test_build_simple_filter_args(self):
         request = MagicMock()
         user = User.objects.create_user(username="test")
-        queries = \
-            self.one_manager.get_chain_fragment(request).to_query_filter(user)
+        queries = self.one_manager.get_chain_fragment(request, self.view)\
+            .to_query_filter(user)
         self.assertTrue(
             repr(queries) == repr(Q(**{"two__three_a__user":user}) |
                                   Q(**{"two__three_b__user":user})) or
@@ -352,19 +364,15 @@ class RecursiveChainManagerTestCase(TestCase):
         )
 
     def test_empty_recursive_filter_args(self):
-        user = User.objects.create_user(username="test")
         self.assertRaises(
             InvalidChainException,
-            ZeroRecursiveChainProcessor().get_chain_fragment,
-            user
+            ZeroRecursiveChainProcessor().get_chain_fragment
         )
 
     def test_empty_next_filter_args(self):
-        user = User.objects.create_user(username="test")
         self.assertRaises(
             InvalidChainException,
             ZeroRecursiveChainProcessor().get_chain_fragment,
-            user
         )
 
 
