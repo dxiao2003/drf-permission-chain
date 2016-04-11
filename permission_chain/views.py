@@ -59,7 +59,7 @@ class ChainViewMixin(object):
                         headers=headers)
 
     def update(self, request, *args, **kwargs):
-        serializer = self.saved_serializer()
+        serializer = self.saved_serializer
         self.check_object_permissions(request, serializer.instance)
         self.perform_update(serializer)
         return Response(serializer.data)
