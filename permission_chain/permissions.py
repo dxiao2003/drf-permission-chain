@@ -282,12 +282,12 @@ class ChainProcessor(object):
         created for a ``"create"`` action where an object does not yet exist,
         since we may want to restrict which objects a user is allowed to create.
         """
-        chains = []
+        chain_generator = []
         get_additional_chains.send(self.__class__,
-                                   chains=chains,
+                                   chain_generator=chain_generator,
                                    request=request, view=view, obj=obj)
-        for c in chains:
-            yield c
+        for c in chain_generator:
+            yield c(request, view, obj)
 
     def get_chain_fragment(self, request, view):
         fragments = []

@@ -5,7 +5,6 @@
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/permission_chain/permissions.py" afterPath="$PROJECT_DIR$/permission_chain/permissions.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/permission_chain/signals.py" afterPath="$PROJECT_DIR$/permission_chain/signals.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/permission_chain/tests.py" afterPath="$PROJECT_DIR$/permission_chain/tests.py" />
     </list>
     <ignored path="drf-permission-chain.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -74,8 +73,8 @@
       <file leaf-file-name="permissions.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/permission_chain/permissions.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="101">
-              <caret line="374" column="0" selection-start-line="374" selection-start-column="0" selection-end-line="374" selection-end-column="0" />
+            <state relative-caret-position="153">
+              <caret line="285" column="50" selection-start-line="285" selection-start-column="50" selection-end-line="285" selection-end-column="50" />
               <folding>
                 <element signature="e#0#39#0" expanded="true" />
               </folding>
@@ -86,8 +85,8 @@
       <file leaf-file-name="signals.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/permission_chain/signals.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="150">
-              <caret line="6" column="0" selection-start-line="6" selection-start-column="0" selection-end-line="6" selection-end-column="0" />
+            <state relative-caret-position="125">
+              <caret line="5" column="14" selection-start-line="5" selection-start-column="14" selection-end-line="5" selection-end-column="14" />
               <folding>
                 <element signature="e#0#39#0" expanded="true" />
               </folding>
@@ -148,9 +147,9 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/permission_chain/views.py" />
+        <option value="$PROJECT_DIR$/permission_chain/tests.py" />
         <option value="$PROJECT_DIR$/permission_chain/signals.py" />
         <option value="$PROJECT_DIR$/permission_chain/permissions.py" />
-        <option value="$PROJECT_DIR$/permission_chain/tests.py" />
       </list>
     </option>
   </component>
@@ -440,7 +439,14 @@
       <option name="project" value="LOCAL" />
       <updated>1461430018904</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="changed chains to iterators">
+      <created>1461448892807</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1461448892807</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -485,7 +491,8 @@
     <MESSAGE value="removed workspace.xml" />
     <MESSAGE value="added signals" />
     <MESSAGE value="fixed QueryFragment.__or__ and __and__ to handle None" />
-    <option name="LAST_COMMIT_MESSAGE" value="fixed QueryFragment.__or__ and __and__ to handle None" />
+    <MESSAGE value="changed chains to iterators" />
+    <option name="LAST_COMMIT_MESSAGE" value="changed chains to iterators" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -888,16 +895,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/permission_chain/signals.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="150">
-          <caret line="6" column="0" selection-start-line="6" selection-start-column="0" selection-end-line="6" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#39#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/venv/Lib/site-packages/django/dispatch/dispatcher.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="534">
@@ -916,10 +913,20 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/permission_chain/signals.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="125">
+          <caret line="5" column="14" selection-start-line="5" selection-start-column="14" selection-end-line="5" selection-end-column="14" />
+          <folding>
+            <element signature="e#0#39#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/permission_chain/permissions.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="101">
-          <caret line="374" column="0" selection-start-line="374" selection-start-column="0" selection-end-line="374" selection-end-column="0" />
+        <state relative-caret-position="153">
+          <caret line="285" column="50" selection-start-line="285" selection-start-column="50" selection-end-line="285" selection-end-column="50" />
           <folding>
             <element signature="e#0#39#0" expanded="true" />
           </folding>
