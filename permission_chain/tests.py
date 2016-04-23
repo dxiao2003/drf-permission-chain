@@ -11,6 +11,8 @@ from mock import MagicMock
 from permission_chain.permissions import ChainPermission, OBJECT_ACTIONS, \
     RecursiveChainProcessor, ALL_ACTION_NAMES, QueryFragment, \
     InvalidChainException, ChainProcessor
+from permission_chain.signals import get_additional_chains, \
+    get_additional_chain_fragments, process_additional_chain
 from permission_chain.views import ChainViewMixin
 
 ALL_PERMS = {
@@ -246,10 +248,17 @@ class ThreeRecursiveChainProcessor(ChainProcessor):
     }
 
     def get_chains(self, request=None, view=None, obj=None):
-        return self.map.get(obj, [])
+        chains = super(ThreeRecursiveChainProcessor, self).get_chains(
+            request=request, view=view, obj=obj)
+        return chains + self.map.get(obj, [])
 
     def get_chain_fragment(self, request, view):
-        return QueryFragment("user")
+        fragment = super(ThreeRecursiveChainProcessor, self).get_chain_fragment(
+            request, view)
+        if fragment:
+            return fragment | QueryFragment("user")
+        else:
+            return QueryFragment("user")
 
 
 class TwoRecursiveChainProcessor(RecursiveChainProcessor):
@@ -284,8 +293,8 @@ class OneRecursiveChainProcessor(RecursiveChainProcessor):
     }
 
     def get_chains(self, request=None, view=None, obj=None):
-        return super(OneRecursiveChainProcessor, self).get_chains(request, view,
-                                                                  obj)
+        return super(OneRecursiveChainProcessor, self).get_chains(
+            request, view, obj)
 
     def get_next_links(self, request=None, view=None, obj=None):
         if obj is not None:
@@ -309,8 +318,9 @@ class ZeroRecursiveChainProcessor(RecursiveChainProcessor):
     next_chain_processor_class = EmptyFilterArgsChainProcessor
 
     def get_chain_fragment(self, request=None, view=None):
-        super(ZeroRecursiveChainProcessor, self).get_chain_fragment(request,
-                                                                    view)
+        return super(ZeroRecursiveChainProcessor, self).get_chain_fragment(
+            request, view
+        )
 
     def get_next_links(self, request=None, view=None, obj=None):
         return [(("EMPTY", "NONE"),)]
@@ -324,8 +334,7 @@ class RecursiveChainManagerTestCase(TestCase):
     def setUp(self):
         self.request = MagicMock()
         self.view = MagicMock()
-
-    one_manager = OneRecursiveChainProcessor()
+        self.one_manager = OneRecursiveChainProcessor()
 
     def test_simple_chain(self):
         chains = self.one_manager.get_chains(obj="OBJ_SIMPLE_1")
@@ -441,4 +450,63 @@ class QueryFragmentTestCase(TestCase):
         self.assertEqual(repr(query_filter), repr(qf))
 
 
+def add_chain(sender, **kwargs):
+    chains = kwargs.pop("chains")
+    request = kwargs.pop("request")
+    view = kwargs.pop("view")
+    obj = kwargs.pop("obj")
+    chains.append("NEW CHAIN")
 
+
+def add_fragment(sender, **kwargs):
+    fragments = kwargs.pop("fragments")
+    request = kwargs.pop("request")
+    view = kwargs.pop("view")
+
+
+def process_chain(sender, **kwargs):
+    result = kwargs.pop("result")
+    request = kwargs.pop("request")
+    view = kwargs.pop("view")
+    obj = kwargs.pop("obj")
+    validated_data = kwargs.pop("validated_data")
+    if obj == "ZZZ" and "result" not in result:
+        result["result"] = True
+
+
+class SignalTestCase(TestCase):
+
+    def setUp(self):
+        get_additional_chains.connect(add_chain,
+                                      sender=OneRecursiveChainProcessor,
+                                      dispatch_uid="add_chain")
+        get_additional_chain_fragments.connect(add_fragment,
+                                       sender=TwoRecursiveChainProcessor,
+                                       dispatch_uid="add_fragment")
+        process_additional_chain.connect(process_chain,
+                                         sender=ThreeRecursiveChainProcessor,
+                                         dispatch_uid="process_chain")
+
+    def tearDown(self):
+        get_additional_chains.disconnect(add_chain, dispatch_uid="add_chain")
+        get_additional_chain_fragments.disconnect(add_fragment,
+                                                  dispatch_uid="add_fragment")
+        process_additional_chain.disconnect(process_chain,
+                                            dispatch_uid="process_chain")
+
+    def test_add_chain(self):
+        chains = OneRecursiveChainProcessor().get_chains(obj="OBJ_SIMPLE_1")
+        self.assertIn("NEW CHAIN", chains)
+
+        chains = TwoRecursiveChainProcessor().get_chains(None, None,
+                                                         obj="OBJ_SIMPLE_1")
+        self.assertNotIn("NEW CHAIN", chains)
+
+    def test_add_fragment(self):
+        pass
+
+    def test_process_chain(self):
+        self.assertTrue(ThreeRecursiveChainProcessor()
+                        .process_chain([], None, None, obj="ZZZ"))
+        self.assertFalse(TwoRecursiveChainProcessor()
+                        .process_chain([], None, None, obj="ZZZ"))

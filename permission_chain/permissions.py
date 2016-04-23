@@ -1,6 +1,8 @@
 from __future__ import unicode_literals
 
 from django.db.models import Q
+from permission_chain.signals import get_additional_chains, \
+    get_additional_chain_fragments, process_additional_chain
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import get_object_or_404
@@ -274,10 +276,21 @@ class ChainProcessor(object):
         created for a ``"create"`` action where an object does not yet exist,
         since we may want to restrict which objects a user is allowed to create.
         """
-        raise NotImplementedError
+        chains = []
+        get_additional_chains.send(self.__class__,
+                                   chains=chains,
+                                   request=request, view=view, obj=obj)
+        return chains
 
     def get_chain_fragment(self, request, view):
-        raise NotImplementedError
+        fragments = []
+        get_additional_chain_fragments.send(self.__class__,
+                                            fragments=fragments,
+                                            request=request, view=view)
+        if len(fragments) > 0:
+            return QueryFragment(*fragments, query_type=QueryFragment.OR)
+        else:
+            return None
 
     def process(self, request, view, obj=None):
         """
@@ -305,7 +318,12 @@ class ChainProcessor(object):
 
     def process_chain(self, chain, request, view, obj=None,
                       validated_data=None):
-        raise NotImplementedError
+        result = {}
+        process_additional_chain.send(self.__class__,
+                                      chain=chain, result=result,
+                                      request=request, view=view, obj=obj,
+                                      validated_data=validated_data)
+        return result.get("result", False)
 
     def load_validated_data(self, request, view):
         if view.action not in ("create", "update", "partial_update"):
@@ -329,7 +347,9 @@ class RecursiveChainProcessor(ChainProcessor):
         self.next_chain_processor = self.next_chain_processor_class()
 
     def get_chains(self, request, view, obj=None):
-        return self.get_recursive_chains(request, view, obj)
+        chains = super(RecursiveChainProcessor, self).get_chains(request, view,
+                                                                 obj=obj)
+        return chains + self.get_recursive_chains(request, view, obj)
 
     def get_recursive_chains(self, request, view, obj=None):
         """
@@ -367,7 +387,13 @@ class RecursiveChainProcessor(ChainProcessor):
         raise NotImplementedError
 
     def get_chain_fragment(self, request, view):
-        return self.recursive_chain_fragment(request, view)
+        fragment = super(RecursiveChainProcessor, self).get_chain_fragment(
+            request, view)
+        recursive_fragment =  self.recursive_chain_fragment(request, view)
+        if fragment:
+            return fragment | recursive_fragment
+        else:
+            return recursive_fragment
 
     def recursive_chain_fragment(self, request, view):
         next_prefixes = self.next_link_chain_prefixes(request, view)
