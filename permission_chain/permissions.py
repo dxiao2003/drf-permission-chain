@@ -1,10 +1,12 @@
 from __future__ import unicode_literals
 
+import itertools
+
 from django.db.models import Q
 from permission_chain.signals import get_additional_chains, \
     get_additional_chain_fragments, process_additional_chain
 from rest_framework import status
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
@@ -270,8 +272,8 @@ class ChainProcessor(object):
 
     def get_chains(self, request, view, obj=None):
         """
-        Returns a list of chains of permissions from ``request.user`` all the
-        way to ``obj``.  Each chain is a tuple of elements representing a
+        Returns an iterator  of chains of permissions from ``request.user`` all
+        the way to ``obj``.  Each chain is a tuple of elements representing a
         chain of permissions ``request.user`` to ``obj``
         The type and meaning of the elements in the chain are
         application-specific, but given knowledge of the chain it must be
@@ -284,7 +286,8 @@ class ChainProcessor(object):
         get_additional_chains.send(self.__class__,
                                    chains=chains,
                                    request=request, view=view, obj=obj)
-        return chains
+        for c in chains:
+            yield c
 
     def get_chain_fragment(self, request, view):
         fragments = []
@@ -306,6 +309,8 @@ class ChainProcessor(object):
         """
         try:
             chains = self.get_chains(request, view, obj)
+        except ValidationError:
+            raise
         except:
             return False
 
@@ -353,7 +358,8 @@ class RecursiveChainProcessor(ChainProcessor):
     def get_chains(self, request, view, obj=None):
         chains = super(RecursiveChainProcessor, self).get_chains(request, view,
                                                                  obj=obj)
-        return chains + self.get_recursive_chains(request, view, obj)
+        return itertools.chain(chains,
+                               self.get_recursive_chains(request, view, obj))
 
     def get_recursive_chains(self, request, view, obj=None):
         """
@@ -367,15 +373,12 @@ class RecursiveChainProcessor(ChainProcessor):
         """
 
         next_links = self.get_next_links(request, view, obj)
-        chains = []
 
         for l in next_links:
             next_chains = self.next_chain_processor.get_chains(
                 request, view, l)
             for c in next_chains:
-                chains.append(c + (l,))
-
-        return chains
+                yield c + (l,)
 
     def get_next_links(self, request, view, obj=None):
         """

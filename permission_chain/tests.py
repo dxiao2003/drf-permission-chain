@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+import itertools
+
 import re
 
 from django.contrib.auth.models import User
@@ -250,7 +252,7 @@ class ThreeRecursiveChainProcessor(ChainProcessor):
     def get_chains(self, request=None, view=None, obj=None):
         chains = super(ThreeRecursiveChainProcessor, self).get_chains(
             request=request, view=view, obj=obj)
-        return chains + self.map.get(obj, [])
+        return itertools.chain(chains, self.map.get(obj, []))
 
     def get_chain_fragment(self, request, view):
         fragment = super(ThreeRecursiveChainProcessor, self).get_chain_fragment(
@@ -338,12 +340,13 @@ class RecursiveChainManagerTestCase(TestCase):
 
     def test_simple_chain(self):
         chains = self.one_manager.get_chains(obj="OBJ_SIMPLE_1")
-        self.assertEqual(chains, [("USER_SIMPLE",
-                                   "OBJ_SIMPLE_3",
-                                   "OBJ_SIMPLE_2")])
+        self.assertEqual(list(chains), [("USER_SIMPLE",
+                                         "OBJ_SIMPLE_3",
+                                         "OBJ_SIMPLE_2")])
 
     def test_multiple_chains(self):
         chains = self.one_manager.get_chains(obj="OBJ_MULTIPLE_1")
+        chains = list(chains)
         self.assertEqual(len(chains), 4)
         for one in ("A", "B"):
             for two in ("A", "B"):
@@ -354,11 +357,11 @@ class RecursiveChainManagerTestCase(TestCase):
 
     def test_empty_recursive_chains(self):
         chains = self.one_manager.get_chains(obj="OBJ_EMPTY_1")
-        self.assertEqual(len(chains), 0)
+        self.assertEqual(len(list(chains)), 0)
 
     def test_empty_next_link(self):
         chains = self.one_manager.get_chains(obj="OBJ_EMPTY_2")
-        self.assertEqual(len(chains), 0)
+        self.assertEqual(len(list(chains)), 0)
 
     def test_build_simple_filter_args(self):
         request = MagicMock()
