@@ -200,13 +200,17 @@ class QueryFragment(object):
             self.values = set(values)
 
     def __and__(self, other):
-        if not isinstance(other, QueryFragment):
+        if not other:
+            return self
+        elif not isinstance(other, QueryFragment):
             raise ValueError("Cannot combine with non-QueryFragment")
         else:
             return QueryFragment(self, other, query_type=QueryFragment.AND)
 
     def __or__(self, other):
-        if not isinstance(other, QueryFragment):
+        if not other:
+            return self
+        elif not isinstance(other, QueryFragment):
             raise ValueError("Cannot combine with non-QueryFragment")
         else:
             return QueryFragment(self, other, query_type=QueryFragment.OR)
@@ -389,11 +393,7 @@ class RecursiveChainProcessor(ChainProcessor):
     def get_chain_fragment(self, request, view):
         fragment = super(RecursiveChainProcessor, self).get_chain_fragment(
             request, view)
-        recursive_fragment =  self.recursive_chain_fragment(request, view)
-        if fragment:
-            return fragment | recursive_fragment
-        else:
-            return recursive_fragment
+        return  self.recursive_chain_fragment(request, view) | fragment
 
     def recursive_chain_fragment(self, request, view):
         next_prefixes = self.next_link_chain_prefixes(request, view)
