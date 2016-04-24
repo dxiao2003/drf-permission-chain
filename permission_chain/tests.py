@@ -454,11 +454,13 @@ class QueryFragmentTestCase(TestCase):
 
 
 def add_chain(sender, **kwargs):
-    chains = kwargs.pop("chains")
+    chain_generator = kwargs.pop("chain_generator")
     request = kwargs.pop("request")
     view = kwargs.pop("view")
     obj = kwargs.pop("obj")
-    chains.append("NEW CHAIN")
+    def f(request, view, obj):
+        return "NEW CHAIN"
+    chain_generator.append(f)
 
 
 def add_fragment(sender, **kwargs):
@@ -473,7 +475,7 @@ def process_chain(sender, **kwargs):
     view = kwargs.pop("view")
     obj = kwargs.pop("obj")
     validated_data = kwargs.pop("validated_data")
-    if obj == "ZZZ" and "result" not in result:
+    if obj == "ZZZ":
         result["result"] = True
 
 

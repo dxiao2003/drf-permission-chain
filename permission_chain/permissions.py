@@ -307,21 +307,20 @@ class ChainProcessor(object):
         Either ``obj`` or ``data`` must be passed in, which specifies the start
         of the chain.
         """
-        try:
-            chains = self.get_chains(request, view, obj)
-        except ValidationError:
-            raise
-        except:
-            return False
 
         if view.action in ("create", "update", "partial_update"):
             validated_data = self.load_validated_data(request, view)
         else:
             validated_data = None
 
-        for c in chains:
-            if self.process_chain(c, request, view, obj, validated_data):
-                return True
+        try:
+            for c in self.get_chains(request, view, obj):
+                if self.process_chain(c, request, view, obj, validated_data):
+                    return True
+        except ValidationError:
+            raise
+        except:
+            return False
 
         return False
 
@@ -356,10 +355,11 @@ class RecursiveChainProcessor(ChainProcessor):
         self.next_chain_processor = self.next_chain_processor_class()
 
     def get_chains(self, request, view, obj=None):
-        chains = super(RecursiveChainProcessor, self).get_chains(request, view,
-                                                                 obj=obj)
-        return itertools.chain(chains,
-                               self.get_recursive_chains(request, view, obj))
+        return itertools.chain(
+            self.get_recursive_chains(request, view, obj),
+            super(RecursiveChainProcessor, self).get_chains(request, view,
+                                                            obj=obj)
+            )
 
     def get_recursive_chains(self, request, view, obj=None):
         """
