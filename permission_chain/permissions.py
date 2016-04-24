@@ -284,10 +284,9 @@ class ChainProcessor(object):
         """
         chain_generator = []
         get_additional_chains.send_robust(self.__class__, processor=self,
-                                          chain_generator=chain_generator,
-                                          request=request, view=view, obj=obj)
+                                          chain_generator=chain_generator)
         for c in chain_generator:
-            yield c(request, view, obj)
+            yield c(self, request, view, obj)
 
     def get_chain_fragment(self, request, view):
         fragments = []
@@ -316,8 +315,20 @@ class ChainProcessor(object):
 
         try:
             for c in self.get_chains(request, view, obj):
-                if self.process_chain(c, request, view, obj, validated_data):
-                    return True
+                try:
+                    if self.process_chain(c, request, view, obj,
+                                          validated_data):
+                        return True
+                    else:
+                        result = {}
+                        process_additional_chain.send_robust(
+                            self.__class__, processor=self,
+                            chain=c, result=result, request=request,
+                            view=view, obj=obj, validated_data=validated_data)
+                        if result.get("result", False):
+                            return True
+                except:
+                    pass
         except ValidationError:
             raise
         except:
@@ -327,12 +338,7 @@ class ChainProcessor(object):
 
     def process_chain(self, chain, request, view, obj=None,
                       validated_data=None):
-        result = {}
-        process_additional_chain.send_robust(
-            self.__class__, processor=self,
-            chain=chain, result=result, request=request, view=view, obj=obj,
-            validated_data=validated_data)
-        return result.get("result", False)
+        raise NotImplementedError
 
     def load_validated_data(self, request, view):
         if view.action not in ("create", "update", "partial_update"):
