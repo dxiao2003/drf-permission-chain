@@ -283,17 +283,18 @@ class ChainProcessor(object):
         since we may want to restrict which objects a user is allowed to create.
         """
         chain_generator = []
-        get_additional_chains.send(self.__class__,
-                                   chain_generator=chain_generator,
-                                   request=request, view=view, obj=obj)
+        get_additional_chains.send_robust(self.__class__, processor=self,
+                                          chain_generator=chain_generator,
+                                          request=request, view=view, obj=obj)
         for c in chain_generator:
             yield c(request, view, obj)
 
     def get_chain_fragment(self, request, view):
         fragments = []
-        get_additional_chain_fragments.send(self.__class__,
-                                            fragments=fragments,
-                                            request=request, view=view)
+        get_additional_chain_fragments.send_robust(
+            self.__class__, processor=self,
+            fragments=fragments, request=request, view=view
+        )
         if len(fragments) > 0:
             return QueryFragment(*fragments, query_type=QueryFragment.OR)
         else:
@@ -327,10 +328,10 @@ class ChainProcessor(object):
     def process_chain(self, chain, request, view, obj=None,
                       validated_data=None):
         result = {}
-        process_additional_chain.send(self.__class__,
-                                      chain=chain, result=result,
-                                      request=request, view=view, obj=obj,
-                                      validated_data=validated_data)
+        process_additional_chain.send_robust(
+            self.__class__, processor=self,
+            chain=chain, result=result, request=request, view=view, obj=obj,
+            validated_data=validated_data)
         return result.get("result", False)
 
     def load_validated_data(self, request, view):
