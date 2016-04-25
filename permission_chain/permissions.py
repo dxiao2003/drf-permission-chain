@@ -178,7 +178,7 @@ class QueryFragment(object):
     CONST = "CONST"
 
     def __init__(self, *values, **kwargs):
-        query_type = kwargs.get("query_type", QueryFragment.CONST)
+        query_type = kwargs.pop("query_type", QueryFragment.CONST)
 
         if query_type in (QueryFragment.OR, QueryFragment.AND,
                           QueryFragment.CONST):
@@ -186,14 +186,14 @@ class QueryFragment(object):
         else:
             raise ValueError("Unknown query type: " + query_type)
 
+        self.kwargs = kwargs
+
         if query_type == QueryFragment.CONST:
             if len(values) != 1 or not isinstance(values[0], basestring):
                 raise ValueError("Constant fragment must consist of a single "
                                  "string")
             else:
                 self.value = values[0]
-                if "fixed_arg" in kwargs:
-                    self.fixed_arg = kwargs["fixed_arg"]
         else:
             for v in values:
                 if not isinstance(v, QueryFragment):
@@ -235,17 +235,19 @@ class QueryFragment(object):
 
     def recursively_build(self, func):
         if self.query_type == QueryFragment.CONST:
-            return QueryFragment(func(self.value))
+            return QueryFragment(func(self.value), query_type=self.query_type,
+                                 **self.kwargs)
         else:
             return QueryFragment(
                 *[v.recursively_build(func) for v in self.values],
-                query_type=self.query_type
+                query_type=self.query_type,
+                **self.kwargs
             )
 
     def to_query_filter(self, arg):
         if self.query_type == QueryFragment.CONST:
-            if hasattr(self, "fixed_arg"):
-                return Q(**{self.value: self.fixed_arg})
+            if "fixed_arg" in self.kwargs:
+                return Q(**{self.value: self.kwargs["fixed_arg"]})
             else:
                 return Q(**{self.value: arg})
         elif self.query_type == QueryFragment.AND:
@@ -308,12 +310,12 @@ class ChainProcessor(object):
         of the chain.
         """
 
-        if view.action in ("create", "update", "partial_update"):
-            validated_data = self.load_validated_data(request, view)
-        else:
-            validated_data = None
-
         try:
+            if view.action in ("create", "update", "partial_update"):
+                validated_data = self.load_validated_data(request, view)
+            else:
+                validated_data = None
+
             for c in self.get_chains(request, view, obj):
                 try:
                     if self.process_chain(c, request, view, obj,
@@ -338,7 +340,7 @@ class ChainProcessor(object):
 
     def process_chain(self, chain, request, view, obj=None,
                       validated_data=None):
-        raise NotImplementedError
+        return False
 
     def load_validated_data(self, request, view):
         if view.action not in ("create", "update", "partial_update"):

@@ -54,7 +54,6 @@ class ChainPermissionTestCase(TestCase):
         self.request = MagicMock()
         self.request.user = User.objects.create_user("test user")
         self.view = MagicMock()
-        self.view.get_chains.return_value = []
         self.chain_processor = MagicMock()
         self.chain_processor.process.return_value = False
         self.chain_processor_class = MockClass(self.chain_processor)
@@ -441,6 +440,13 @@ class QueryFragmentTestCase(TestCase):
         qprime = q.add_prefix("prefix")
         self.check_fragment(qprime, "prefix__hello")
 
+    def test_add_prefix_kwargs(self):
+        q = QueryFragment("fixed", fixed_arg=False)
+        qprime = q.add_prefix("prefix")
+        self.assertEqual(qprime.query_type, QueryFragment.CONST)
+        self.assertEqual(qprime.value, "prefix__fixed")
+        self.assertEqual(qprime.kwargs["fixed_arg"], False)
+
     def to_query_filter(self):
         q1 = QueryFragment("hello1")
         q2 = QueryFragment("hello2")
@@ -455,10 +461,7 @@ class QueryFragmentTestCase(TestCase):
 
 def add_chain(sender, **kwargs):
     chain_generator = kwargs.pop("chain_generator")
-    request = kwargs.pop("request")
-    view = kwargs.pop("view")
-    obj = kwargs.pop("obj")
-    def f(request, view, obj):
+    def f(processor, request, view, obj):
         return "NEW CHAIN"
     chain_generator.append(f)
 
@@ -475,7 +478,7 @@ def process_chain(sender, **kwargs):
     view = kwargs.pop("view")
     obj = kwargs.pop("obj")
     validated_data = kwargs.pop("validated_data")
-    if obj == "ZZZ":
+    if obj == "OBJ_SIMPLE_3":
         result["result"] = True
 
 
@@ -491,6 +494,11 @@ class SignalTestCase(TestCase):
         process_additional_chain.connect(process_chain,
                                          sender=ThreeRecursiveChainProcessor,
                                          dispatch_uid="process_chain")
+        self.request = MagicMock()
+        self.request.user = User.objects.create_user("test user")
+        self.view = MagicMock()
+        self.view.get_chains.return_value = []
+        self.view.action = "get"
 
     def tearDown(self):
         get_additional_chains.disconnect(add_chain, dispatch_uid="add_chain")
@@ -512,6 +520,6 @@ class SignalTestCase(TestCase):
 
     def test_process_chain(self):
         self.assertTrue(ThreeRecursiveChainProcessor()
-                        .process_chain([], None, None, obj="ZZZ"))
+                        .process(self.request, self.view, obj="OBJ_SIMPLE_3"))
         self.assertFalse(TwoRecursiveChainProcessor()
-                        .process_chain([], None, None, obj="ZZZ"))
+                        .process(self.request, self.view, obj="OBJ_SIMPLE_2"))
