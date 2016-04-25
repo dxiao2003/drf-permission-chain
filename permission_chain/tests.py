@@ -294,8 +294,9 @@ class OneRecursiveChainProcessor(RecursiveChainProcessor):
     }
 
     def get_chains(self, request=None, view=None, obj=None):
-        return super(OneRecursiveChainProcessor, self).get_chains(
-            request, view, obj)
+        return super(OneRecursiveChainProcessor, self).get_chains(request,
+                                                                  view,
+                                                                  obj)
 
     def get_next_links(self, request=None, view=None, obj=None):
         if obj is not None:
@@ -377,13 +378,15 @@ class RecursiveChainManagerTestCase(TestCase):
     def test_empty_recursive_filter_args(self):
         self.assertRaises(
             InvalidChainException,
-            ZeroRecursiveChainProcessor().get_chain_fragment
+            ZeroRecursiveChainProcessor().get_chain_fragment,
+            self.request, self.view
         )
 
     def test_empty_next_filter_args(self):
         self.assertRaises(
             InvalidChainException,
             ZeroRecursiveChainProcessor().get_chain_fragment,
+            self.request, self.view
         )
 
 
@@ -470,6 +473,7 @@ def add_fragment(sender, **kwargs):
     fragments = kwargs.pop("fragments")
     request = kwargs.pop("request")
     view = kwargs.pop("view")
+    fragments.append(QueryFragment("query"))
 
 
 def process_chain(sender, **kwargs):
@@ -488,9 +492,10 @@ class SignalTestCase(TestCase):
         get_additional_chains.connect(add_chain,
                                       sender=OneRecursiveChainProcessor,
                                       dispatch_uid="add_chain")
-        get_additional_chain_fragments.connect(add_fragment,
-                                       sender=TwoRecursiveChainProcessor,
-                                       dispatch_uid="add_fragment")
+        get_additional_chain_fragments.connect(
+            add_fragment,
+            sender=ZeroRecursiveChainProcessor,
+            dispatch_uid="add_fragment")
         process_additional_chain.connect(process_chain,
                                          sender=ThreeRecursiveChainProcessor,
                                          dispatch_uid="process_chain")
@@ -516,7 +521,13 @@ class SignalTestCase(TestCase):
         self.assertNotIn("NEW CHAIN", chains)
 
     def test_add_fragment(self):
-        pass
+        q = ZeroRecursiveChainProcessor().get_chain_fragment(self.request,
+                                                             self.view)
+        self.assertEqual(q.value, "query")
+        self.assertRaises(
+            InvalidChainException,
+            EmptyFilterArgsChainProcessor().get_chain_fragment,
+            self.request, self.view)
 
     def test_process_chain(self):
         self.assertTrue(ThreeRecursiveChainProcessor()

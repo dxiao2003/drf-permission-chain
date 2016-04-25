@@ -296,7 +296,9 @@ class ChainProcessor(object):
             self.__class__, processor=self,
             fragments=fragments, request=request, view=view
         )
-        if len(fragments) > 0:
+        if len(fragments) == 1:
+            return fragments[0]
+        elif len(fragments) > 1:
             return QueryFragment(*fragments, query_type=QueryFragment.OR)
         else:
             return None
@@ -405,7 +407,13 @@ class RecursiveChainProcessor(ChainProcessor):
     def get_chain_fragment(self, request, view):
         fragment = super(RecursiveChainProcessor, self).get_chain_fragment(
             request, view)
-        return  self.recursive_chain_fragment(request, view) | fragment
+        try:
+            return self.recursive_chain_fragment(request, view) | fragment
+        except InvalidChainException:
+            if fragment is not None:
+                return fragment
+            else:
+                raise
 
     def recursive_chain_fragment(self, request, view):
         next_prefixes = self.next_link_chain_prefixes(request, view)
