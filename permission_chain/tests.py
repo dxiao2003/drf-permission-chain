@@ -462,11 +462,8 @@ class QueryFragmentTestCase(TestCase):
         self.assertEqual(repr(query_filter), repr(qf))
 
 
-def add_chain(sender, **kwargs):
-    def f(processor, request, view, obj):
-        return "NEW CHAIN"
-    return f
-
+def add_chain(sender, request=None, view=None, obj=None, **kwargs):
+    return [("NEW CHAIN",)]
 
 def add_fragment(sender, **kwargs):
     request = kwargs.pop("request")
@@ -510,7 +507,7 @@ class SignalTestCase(TestCase):
 
     def test_add_chain(self):
         chains = OneRecursiveChainProcessor().get_chains(obj="OBJ_SIMPLE_1")
-        self.assertIn("NEW CHAIN", chains)
+        self.assertIn(("NEW CHAIN",), chains)
 
         chains = TwoRecursiveChainProcessor().get_chains(None, None,
                                                          obj="OBJ_SIMPLE_1")

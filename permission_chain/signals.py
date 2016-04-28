@@ -4,10 +4,10 @@ from django.dispatch import Signal
 
 # to add additional chains, push onto the chain_generator array
 # a function that takes a chain processor, request, view, obj as arguments
-get_additional_chains = Signal(providing_args=["processor"])
+get_additional_chains = Signal(providing_args=["processor", "request", "view",
+                                               "obj"])
 """
-Receivers should return a function that takes (processor, request, view, obj)
-and returns a chain.
+Receivers should return an iterator that produces chains.
 """
 
 get_additional_chain_fragments = Signal(

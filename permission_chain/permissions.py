@@ -284,11 +284,12 @@ class ChainProcessor(object):
         created for a ``"create"`` action where an object does not yet exist,
         since we may want to restrict which objects a user is allowed to create.
         """
-        results = get_additional_chains.send_robust(self.__class__,
-                                                    processor=self)
-        for receiver, func in results:
-            if hasattr(func, '__call__'):
-                yield func(self, request, view, obj)
+        results = get_additional_chains.send_robust(
+            self.__class__, processor=self, request=request, view=view, obj=obj
+        )
+
+        return itertools.chain(*[c for r, c in results
+                                 if hasattr(c, "__iter__")])
 
     def get_chain_fragment(self, request, view):
         result = get_additional_chain_fragments.send_robust(
