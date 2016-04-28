@@ -287,7 +287,8 @@ class ChainProcessor(object):
         results = get_additional_chains.send_robust(self.__class__,
                                                     processor=self)
         for receiver, func in results:
-            yield func(self, request, view, obj)
+            if hasattr(func, '__call__'):
+                yield func(self, request, view, obj)
 
     def get_chain_fragment(self, request, view):
         result = get_additional_chain_fragments.send_robust(

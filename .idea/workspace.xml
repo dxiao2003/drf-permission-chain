@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="93b84a5a-df9d-4a24-8a23-6f1b50bbb064" name="Default" comment="">
+    <list default="true" id="93b84a5a-df9d-4a24-8a23-6f1b50bbb064" name="Default" comment="check if result is callable">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/permission_chain/permissions.py" afterPath="$PROJECT_DIR$/permission_chain/permissions.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/permission_chain/signals.py" afterPath="$PROJECT_DIR$/permission_chain/signals.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/permission_chain/tests.py" afterPath="$PROJECT_DIR$/permission_chain/tests.py" />
     </list>
     <ignored path="drf-permission-chain.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -71,11 +69,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="permissions.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="permissions.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/permission_chain/permissions.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="701">
-              <caret line="444" column="8" selection-start-line="444" selection-start-column="8" selection-end-line="444" selection-end-column="8" />
+            <state relative-caret-position="450">
+              <caret line="291" column="0" selection-start-line="291" selection-start-column="0" selection-end-line="291" selection-end-column="0" />
               <folding>
                 <element signature="e#0#39#0" expanded="true" />
               </folding>
@@ -86,7 +84,7 @@
       <file leaf-file-name="signals.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/permission_chain/signals.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="225">
+            <state relative-caret-position="175">
               <caret line="9" column="20" selection-start-line="9" selection-start-column="20" selection-end-line="9" selection-end-column="20" />
               <folding>
                 <element signature="e#0#39#0" expanded="true" />
@@ -107,11 +105,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="tests.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="tests.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/permission_chain/tests.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="971">
-              <caret line="532" column="0" selection-start-line="532" selection-start-column="0" selection-end-line="532" selection-end-column="0" />
+            <state relative-caret-position="12275">
+              <caret line="508" column="59" selection-start-line="508" selection-start-column="59" selection-end-line="508" selection-end-column="59" />
               <folding>
                 <element signature="e#0#39#0" expanded="true" />
               </folding>
@@ -129,8 +127,8 @@
       <list>
         <option value="$PROJECT_DIR$/permission_chain/views.py" />
         <option value="$PROJECT_DIR$/permission_chain/signals.py" />
-        <option value="$PROJECT_DIR$/permission_chain/permissions.py" />
         <option value="$PROJECT_DIR$/permission_chain/tests.py" />
+        <option value="$PROJECT_DIR$/permission_chain/permissions.py" />
       </list>
     </option>
   </component>
@@ -171,7 +169,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -207,6 +204,7 @@
         </subPane>
       </pane>
       <pane id="Scratches" />
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -490,23 +488,28 @@
       <option name="project" value="LOCAL" />
       <updated>1461597090992</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="changed signals to use return values">
+      <created>1461853824494</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1461853824494</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="ToolWindowManager">
     <frame x="2124" y="-1828" width="1854" height="1390" extended-state="0" />
-    <editor active="false" />
+    <editor active="true" />
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3592881" sideWeight="0.5" order="0" side_tool="true" content_ui="tabs" x="-7" y="535" width="259" height="446" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32920793" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.29826733" sideWeight="0.47461212" order="9" side_tool="true" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32920793" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
-      <window_info id="Version Control" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.23316061" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32728842" sideWeight="0.7073343" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.23336214" sideWeight="0.5" order="12" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.24917878" sideWeight="0.5" order="1" side_tool="true" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.31806394" sideWeight="0.5253879" order="13" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32895353" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.39896372" sideWeight="0.59308887" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Changes" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3283767" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Messages" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -514,10 +517,12 @@
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Application Servers" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.39975247" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32728842" sideWeight="0.7073343" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32920793" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.24720298" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.39896372" sideWeight="0.59308887" order="4" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="Vcs.Log.UiProperties">
@@ -541,7 +546,8 @@
     <MESSAGE value="added processor tosignal" />
     <MESSAGE value="- fixed some signal tests&#10;- fixed adding prefix to fixed arg" />
     <MESSAGE value="- fixed some signal tests, chain fragment signals&#10;" />
-    <option name="LAST_COMMIT_MESSAGE" value="- fixed some signal tests, chain fragment signals&#10;" />
+    <MESSAGE value="changed signals to use return values" />
+    <option name="LAST_COMMIT_MESSAGE" value="changed signals to use return values" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -1004,18 +1010,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/permission_chain/signals.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="225">
+        <state relative-caret-position="175">
           <caret line="9" column="20" selection-start-line="9" selection-start-column="20" selection-end-line="9" selection-end-column="20" />
-          <folding>
-            <element signature="e#0#39#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/permission_chain/permissions.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="701">
-          <caret line="444" column="8" selection-start-line="444" selection-start-column="8" selection-end-line="444" selection-end-column="8" />
           <folding>
             <element signature="e#0#39#0" expanded="true" />
           </folding>
@@ -1024,8 +1020,18 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/permission_chain/tests.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="971">
-          <caret line="532" column="0" selection-start-line="532" selection-start-column="0" selection-end-line="532" selection-end-column="0" />
+        <state relative-caret-position="12275">
+          <caret line="508" column="59" selection-start-line="508" selection-start-column="59" selection-end-line="508" selection-end-column="59" />
+          <folding>
+            <element signature="e#0#39#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/permission_chain/permissions.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="450">
+          <caret line="291" column="0" selection-start-line="291" selection-start-column="0" selection-end-line="291" selection-end-column="0" />
           <folding>
             <element signature="e#0#39#0" expanded="true" />
           </folding>
