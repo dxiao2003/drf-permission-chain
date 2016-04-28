@@ -284,21 +284,20 @@ class ChainProcessor(object):
         created for a ``"create"`` action where an object does not yet exist,
         since we may want to restrict which objects a user is allowed to create.
         """
-        chain_generator = []
-        get_additional_chains.send_robust(self.__class__, processor=self,
-                                          chain_generator=chain_generator)
-        for c in chain_generator:
-            yield c(self, request, view, obj)
+        results = get_additional_chains.send_robust(self.__class__,
+                                                    processor=self)
+        for receiver, func in results:
+            yield func(self, request, view, obj)
 
     def get_chain_fragment(self, request, view):
-        fragments = []
-        get_additional_chain_fragments.send_robust(
+        result = get_additional_chain_fragments.send_robust(
             self.__class__, processor=self,
-            fragments=fragments, request=request, view=view
+            request=request, view=view
         )
-        if len(fragments) == 1:
-            return fragments[0]
-        elif len(fragments) > 1:
+        if len(result) == 1:
+            return result[0][1]
+        elif len(result) > 1:
+            fragments = [r[1] for r in result]
             return QueryFragment(*fragments, query_type=QueryFragment.OR)
         else:
             return None
@@ -324,12 +323,11 @@ class ChainProcessor(object):
                                           validated_data):
                         return True
                     else:
-                        result = {}
-                        process_additional_chain.send_robust(
+                        result = process_additional_chain.send_robust(
                             self.__class__, processor=self,
-                            chain=c, result=result, request=request,
-                            view=view, obj=obj, validated_data=validated_data)
-                        if result.get("result", False):
+                            chain=c, request=request, view=view, obj=obj,
+                            validated_data=validated_data)
+                        if any([r[1] == True for r in result]):
                             return True
                 except:
                     pass
@@ -360,11 +358,13 @@ class RecursiveChainProcessor(ChainProcessor):
     """
 
     next_chain_processor_class = None
+    next_chain_processor_kwargs = {}
 
     def __init__(self, *args, **kwargs):
         super(RecursiveChainProcessor, self).__init__(*args, **kwargs)
-        self.next_chain_processor = self.next_chain_processor_class()
-
+        self.next_chain_processor = self.next_chain_processor_class(
+            **self.next_chain_processor_kwargs
+        )
     def get_chains(self, request, view, obj=None):
         return itertools.chain(
             self.get_recursive_chains(request, view, obj),

@@ -463,27 +463,23 @@ class QueryFragmentTestCase(TestCase):
 
 
 def add_chain(sender, **kwargs):
-    chain_generator = kwargs.pop("chain_generator")
     def f(processor, request, view, obj):
         return "NEW CHAIN"
-    chain_generator.append(f)
+    return f
 
 
 def add_fragment(sender, **kwargs):
-    fragments = kwargs.pop("fragments")
     request = kwargs.pop("request")
     view = kwargs.pop("view")
-    fragments.append(QueryFragment("query"))
+    return QueryFragment("query")
 
 
 def process_chain(sender, **kwargs):
-    result = kwargs.pop("result")
     request = kwargs.pop("request")
     view = kwargs.pop("view")
     obj = kwargs.pop("obj")
     validated_data = kwargs.pop("validated_data")
-    if obj == "OBJ_SIMPLE_3":
-        result["result"] = True
+    return obj == "OBJ_SIMPLE_3"
 
 
 class SignalTestCase(TestCase):
