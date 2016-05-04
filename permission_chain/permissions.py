@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 import itertools
+from copy import copy
 
 from django.db.models import Q
 from permission_chain.signals import get_additional_chains, \
@@ -361,13 +362,16 @@ class RecursiveChainProcessor(ChainProcessor):
     """
 
     next_chain_processor_class = None
-    next_chain_processor_kwargs = {}
+    recursive_chain_processor_kwargs = {}
 
     def __init__(self, *args, **kwargs):
-        super(RecursiveChainProcessor, self).__init__(*args, **kwargs)
+        super(RecursiveChainProcessor, self).__init__()
+        default_kwargs = copy(self.recursive_chain_processor_kwargs)
+        default_kwargs.update(kwargs)
         self.next_chain_processor = self.next_chain_processor_class(
-            **self.next_chain_processor_kwargs
+            **default_kwargs
         )
+
     def get_chains(self, request, view, obj=None):
         return itertools.chain(
             self.get_recursive_chains(request, view, obj),
