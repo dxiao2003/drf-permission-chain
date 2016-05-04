@@ -296,10 +296,11 @@ class ChainProcessor(object):
             self.__class__, processor=self,
             request=request, view=view
         )
-        if len(result) == 1:
+        if len(result) == 1 and isinstance(result[0][1], QueryFragment):
             return result[0][1]
         elif len(result) > 1:
-            fragments = [r[1] for r in result]
+            fragments = [r[1] for r in result
+                         if isinstance(r[1], QueryFragment)]
             return QueryFragment(*fragments, query_type=QueryFragment.OR)
         else:
             return None
