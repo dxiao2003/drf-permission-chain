@@ -174,6 +174,7 @@ def ChainPermission(*args, **kwargs):
 
 
 class QueryFragment(object):
+    NOT = "NOT"
     OR = "OR"
     AND = "AND"
     CONST = "CONST"
@@ -182,7 +183,7 @@ class QueryFragment(object):
         query_type = kwargs.pop("query_type", QueryFragment.CONST)
 
         if query_type in (QueryFragment.OR, QueryFragment.AND,
-                          QueryFragment.CONST):
+                          QueryFragment.NOT, QueryFragment.CONST):
             self.query_type = query_type
         else:
             raise ValueError("Unknown query type: " + query_type)
@@ -195,6 +196,11 @@ class QueryFragment(object):
                                  "string")
             else:
                 self.value = values[0]
+        elif query_type == QueryFragment.NOT:
+            if len(values) != 1 or not isinstance(values[0], QueryFragment):
+                raise TypeError("Only QueryFragments allowed")
+            value = values[0]
+            self.value = value
         else:
             for v in values:
                 if not isinstance(v, QueryFragment):
@@ -218,11 +224,16 @@ class QueryFragment(object):
         else:
             return QueryFragment(self, other, query_type=QueryFragment.OR)
 
+    def __invert__(self):
+        return QueryFragment(self, query_type=QueryFragment.NOT)
+
     def __eq__(self, other):
         if not isinstance(other, QueryFragment):
             return False
-        elif self.query_type == QueryFragment.CONST and \
-                        other.query_type == QueryFragment.CONST:
+        elif (self.query_type == QueryFragment.CONST and
+                        other.query_type == QueryFragment.CONST) or \
+             (self.query_type == QueryFragment.NOT and
+                        other.query_type == QueryFragment.NOT):
             return self.value == other.value
         elif self.query_type == other.query_type:
             return self.values == other.values
@@ -237,6 +248,10 @@ class QueryFragment(object):
     def recursively_build(self, func):
         if self.query_type == QueryFragment.CONST:
             return QueryFragment(func(self.value), query_type=self.query_type,
+                                 **self.kwargs)
+        elif self.query_type == QueryFragment.NOT:
+            return QueryFragment(self.value.recursively_build(func),
+                                 query_type=self.query_type,
                                  **self.kwargs)
         else:
             return QueryFragment(
@@ -269,6 +284,8 @@ class QueryFragment(object):
                 else:
                     filter = filter | next_filter
             return filter
+        elif self.query_type == QueryFragment.NOT:
+            return ~ self.value.to_query_filter(arg)
 
 
 class ChainProcessor(object):
