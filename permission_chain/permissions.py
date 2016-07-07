@@ -309,7 +309,7 @@ class ChainProcessor(object):
         return itertools.chain(*[c for r, c in results
                                  if hasattr(c, "__iter__")])
 
-    def get_chain_fragment(self, request, view):
+    def get_chain_query(self, request, view):
         result = get_additional_chain_fragments.send_robust(
             self.__class__, processor=self,
             request=request, view=view
@@ -417,10 +417,7 @@ class RecursiveChainProcessor(ChainProcessor):
 
     def get_next_links(self, request, view, obj=None):
         """
-        Return a list of possible next links in the chain.  Each link is a
-        ``(next_obj, relationship)`` tuple, where ``next_obj`` is the next
-        object and ``relationship`` is application-specific data specifying
-        how this ``obj`` is related to ``next_obj``.
+        Return a list of possible next links in the chain.
 
         If the action is ``create``, then ``obj`` may be None and the processor
         must extract a hypothetical object from the request data and find
@@ -428,21 +425,21 @@ class RecursiveChainProcessor(ChainProcessor):
         """
         raise NotImplementedError
 
-    def get_chain_fragment(self, request, view):
-        fragment = super(RecursiveChainProcessor, self).get_chain_fragment(
+    def get_chain_query(self, request, view):
+        fragment = super(RecursiveChainProcessor, self).get_chain_query(
             request, view)
         try:
-            return self.recursive_chain_fragment(request, view) | fragment
+            return self.recursive_chain_query(request, view) | fragment
         except InvalidChainException:
             if fragment is not None:
                 return fragment
             else:
                 raise
 
-    def recursive_chain_fragment(self, request, view):
-        next_prefixes = self.next_link_chain_prefixes(request, view)
+    def recursive_chain_query(self, request, view):
+        next_prefixes = self.query_prefixes(request, view)
         recursive_fragment = \
-            self.next_chain_processor.get_chain_fragment(request, view)
+            self.next_chain_processor.get_chain_query(request, view)
 
         updated_fragments = []
 
@@ -457,7 +454,7 @@ class RecursiveChainProcessor(ChainProcessor):
         else:
             raise InvalidChainException("No prefixes found")
 
-    def next_link_chain_prefixes(self, request, view):
+    def query_prefixes(self, request, view):
         """
         :returns A list of strings that can be used as prefixes to
                  QueryFragments.

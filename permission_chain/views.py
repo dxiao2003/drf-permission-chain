@@ -75,7 +75,7 @@ class ChainViewMixin(object):
         """
         return queryset.filter(
             self.chain_permission.chain_processor
-                .get_chain_fragment(request, view)
+                .get_chain_query(request, view)
                 .to_query_filter(request.user)
         ).distinct()
 

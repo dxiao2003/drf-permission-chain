@@ -253,8 +253,8 @@ class ThreeRecursiveChainProcessor(ChainProcessor):
             request=request, view=view, obj=obj)
         return itertools.chain(chains, self.map.get(obj, []))
 
-    def get_chain_fragment(self, request, view):
-        fragment = super(ThreeRecursiveChainProcessor, self).get_chain_fragment(
+    def get_chain_query(self, request, view):
+        fragment = super(ThreeRecursiveChainProcessor, self).get_chain_query(
             request, view)
         if fragment:
             return fragment | QueryFragment("user")
@@ -279,7 +279,7 @@ class TwoRecursiveChainProcessor(RecursiveChainProcessor):
         else:
             return []
 
-    def next_link_chain_prefixes(self, request=None, view=None):
+    def query_prefixes(self, request=None, view=None):
         return ["three_a", "three_b"]
 
 
@@ -304,7 +304,7 @@ class OneRecursiveChainProcessor(RecursiveChainProcessor):
         else:
             return []
 
-    def next_link_chain_prefixes(self, request=None, view=None):
+    def query_prefixes(self, request=None, view=None):
         return ["two"]
 
 
@@ -312,22 +312,22 @@ class EmptyFilterArgsChainProcessor(RecursiveChainProcessor):
     next_chain_processor_class =  OneRecursiveChainProcessor
     def get_next_links(self, request=None, view=None, obj=None):
         return []
-    def next_link_chain_prefixes(self, request=None, view=None):
+    def query_prefixes(self, request=None, view=None):
         return []
 
 
 class ZeroRecursiveChainProcessor(RecursiveChainProcessor):
     next_chain_processor_class = EmptyFilterArgsChainProcessor
 
-    def get_chain_fragment(self, request=None, view=None):
-        return super(ZeroRecursiveChainProcessor, self).get_chain_fragment(
+    def get_chain_query(self, request=None, view=None):
+        return super(ZeroRecursiveChainProcessor, self).get_chain_query(
             request, view
         )
 
     def get_next_links(self, request=None, view=None, obj=None):
         return [(("EMPTY", "NONE"),)]
 
-    def next_link_chain_prefixes(self, request=None, view=None):
+    def query_prefixes(self, request=None, view=None):
         return ["empty"]
 
 
@@ -366,7 +366,7 @@ class RecursiveChainManagerTestCase(TestCase):
     def test_build_simple_filter_args(self):
         request = MagicMock()
         user = User.objects.create_user(username="test")
-        queries = self.one_manager.get_chain_fragment(request, self.view)\
+        queries = self.one_manager.get_chain_query(request, self.view)\
             .to_query_filter(user)
         self.assertTrue(
             repr(queries) == repr(Q(**{"two__three_a__user":user}) |
@@ -378,14 +378,14 @@ class RecursiveChainManagerTestCase(TestCase):
     def test_empty_recursive_filter_args(self):
         self.assertRaises(
             InvalidChainException,
-            ZeroRecursiveChainProcessor().get_chain_fragment,
+            ZeroRecursiveChainProcessor().get_chain_query,
             self.request, self.view
         )
 
     def test_empty_next_filter_args(self):
         self.assertRaises(
             InvalidChainException,
-            ZeroRecursiveChainProcessor().get_chain_fragment,
+            ZeroRecursiveChainProcessor().get_chain_query,
             self.request, self.view
         )
 
@@ -514,12 +514,12 @@ class SignalTestCase(TestCase):
         self.assertNotIn("NEW CHAIN", chains)
 
     def test_add_fragment(self):
-        q = ZeroRecursiveChainProcessor().get_chain_fragment(self.request,
-                                                             self.view)
+        q = ZeroRecursiveChainProcessor().get_chain_query(self.request,
+                                                          self.view)
         self.assertEqual(q.value, "query")
         self.assertRaises(
             InvalidChainException,
-            EmptyFilterArgsChainProcessor().get_chain_fragment,
+            EmptyFilterArgsChainProcessor().get_chain_query,
             self.request, self.view)
 
     def test_process_chain(self):
