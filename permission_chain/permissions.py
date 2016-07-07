@@ -1,8 +1,13 @@
 from __future__ import unicode_literals
 
+import itertools
+from copy import copy
+
 from django.db.models import Q
+from permission_chain.signals import get_additional_chains, \
+    get_additional_chain_fragments, process_additional_chain
 from rest_framework import status
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
@@ -169,18 +174,21 @@ def ChainPermission(*args, **kwargs):
 
 
 class QueryFragment(object):
+    NOT = "NOT"
     OR = "OR"
     AND = "AND"
     CONST = "CONST"
 
     def __init__(self, *values, **kwargs):
-        query_type = kwargs.get("query_type", QueryFragment.CONST)
+        query_type = kwargs.pop("query_type", QueryFragment.CONST)
 
         if query_type in (QueryFragment.OR, QueryFragment.AND,
-                          QueryFragment.CONST):
+                          QueryFragment.NOT, QueryFragment.CONST):
             self.query_type = query_type
         else:
             raise ValueError("Unknown query type: " + query_type)
+
+        self.kwargs = kwargs
 
         if query_type == QueryFragment.CONST:
             if len(values) != 1 or not isinstance(values[0], basestring):
@@ -188,8 +196,11 @@ class QueryFragment(object):
                                  "string")
             else:
                 self.value = values[0]
-                if "fixed_arg" in kwargs:
-                    self.fixed_arg = kwargs["fixed_arg"]
+        elif query_type == QueryFragment.NOT:
+            if len(values) != 1 or not isinstance(values[0], QueryFragment):
+                raise TypeError("Only QueryFragments allowed")
+            value = values[0]
+            self.value = value
         else:
             for v in values:
                 if not isinstance(v, QueryFragment):
@@ -198,22 +209,31 @@ class QueryFragment(object):
             self.values = set(values)
 
     def __and__(self, other):
-        if not isinstance(other, QueryFragment):
+        if not other:
+            return self
+        elif not isinstance(other, QueryFragment):
             raise ValueError("Cannot combine with non-QueryFragment")
         else:
             return QueryFragment(self, other, query_type=QueryFragment.AND)
 
     def __or__(self, other):
-        if not isinstance(other, QueryFragment):
+        if not other:
+            return self
+        elif not isinstance(other, QueryFragment):
             raise ValueError("Cannot combine with non-QueryFragment")
         else:
             return QueryFragment(self, other, query_type=QueryFragment.OR)
 
+    def __invert__(self):
+        return QueryFragment(self, query_type=QueryFragment.NOT)
+
     def __eq__(self, other):
         if not isinstance(other, QueryFragment):
             return False
-        elif self.query_type == QueryFragment.CONST and \
-                        other.query_type == QueryFragment.CONST:
+        elif (self.query_type == QueryFragment.CONST and
+                        other.query_type == QueryFragment.CONST) or \
+             (self.query_type == QueryFragment.NOT and
+                        other.query_type == QueryFragment.NOT):
             return self.value == other.value
         elif self.query_type == other.query_type:
             return self.values == other.values
@@ -227,17 +247,23 @@ class QueryFragment(object):
 
     def recursively_build(self, func):
         if self.query_type == QueryFragment.CONST:
-            return QueryFragment(func(self.value))
+            return QueryFragment(func(self.value), query_type=self.query_type,
+                                 **self.kwargs)
+        elif self.query_type == QueryFragment.NOT:
+            return QueryFragment(self.value.recursively_build(func),
+                                 query_type=self.query_type,
+                                 **self.kwargs)
         else:
             return QueryFragment(
                 *[v.recursively_build(func) for v in self.values],
-                query_type=self.query_type
+                query_type=self.query_type,
+                **self.kwargs
             )
 
     def to_query_filter(self, arg):
         if self.query_type == QueryFragment.CONST:
-            if hasattr(self, "fixed_arg"):
-                return Q(**{self.value: self.fixed_arg})
+            if "fixed_arg" in self.kwargs:
+                return Q(**{self.value: self.kwargs["fixed_arg"]})
             else:
                 return Q(**{self.value: arg})
         elif self.query_type == QueryFragment.AND:
@@ -258,14 +284,16 @@ class QueryFragment(object):
                 else:
                     filter = filter | next_filter
             return filter
+        elif self.query_type == QueryFragment.NOT:
+            return ~ self.value.to_query_filter(arg)
 
 
 class ChainProcessor(object):
 
-    def get_chains(self, request=None, view=None, obj=None):
+    def get_chains(self, request, view, obj=None):
         """
-        Returns a list of chains of permissions from ``request.user`` all the
-        way to ``obj``.  Each chain is a tuple of elements representing a
+        Returns an iterator  of chains of permissions from ``request.user`` all
+        the way to ``obj``.  Each chain is a tuple of elements representing a
         chain of permissions ``request.user`` to ``obj``
         The type and meaning of the elements in the chain are
         application-specific, but given knowledge of the chain it must be
@@ -274,10 +302,26 @@ class ChainProcessor(object):
         created for a ``"create"`` action where an object does not yet exist,
         since we may want to restrict which objects a user is allowed to create.
         """
-        raise NotImplementedError
+        results = get_additional_chains.send_robust(
+            self.__class__, processor=self, request=request, view=view, obj=obj
+        )
 
-    def get_chain_fragment(self, request, view):
-        raise NotImplementedError
+        return itertools.chain(*[c for r, c in results
+                                 if hasattr(c, "__iter__")])
+
+    def get_chain_query(self, request, view):
+        result = get_additional_chain_fragments.send_robust(
+            self.__class__, processor=self,
+            request=request, view=view
+        )
+        if len(result) == 1 and isinstance(result[0][1], QueryFragment):
+            return result[0][1]
+        elif len(result) > 1:
+            fragments = [r[1] for r in result
+                         if isinstance(r[1], QueryFragment)]
+            return QueryFragment(*fragments, query_type=QueryFragment.OR)
+        else:
+            return None
 
     def process(self, request, view, obj=None):
         """
@@ -287,25 +331,37 @@ class ChainProcessor(object):
         Either ``obj`` or ``data`` must be passed in, which specifies the start
         of the chain.
         """
+
         try:
-            chains = self.get_chains(request, view, obj)
+            if view.action in ("create", "update", "partial_update"):
+                validated_data = self.load_validated_data(request, view)
+            else:
+                validated_data = None
+
+            for c in self.get_chains(request, view, obj):
+                try:
+                    if self.process_chain(c, request, view, obj,
+                                          validated_data):
+                        return True
+                    else:
+                        result = process_additional_chain.send_robust(
+                            self.__class__, processor=self,
+                            chain=c, request=request, view=view, obj=obj,
+                            validated_data=validated_data)
+                        if any([r[1] == True for r in result]):
+                            return True
+                except:
+                    pass
+        except ValidationError:
+            raise
         except:
             return False
-
-        if view.action in ("create", "update", "partial_update"):
-            validated_data = self.load_validated_data(request, view)
-        else:
-            validated_data = None
-
-        for c in chains:
-            if self.process_chain(c, request, view, obj, validated_data):
-                return True
 
         return False
 
     def process_chain(self, chain, request, view, obj=None,
                       validated_data=None):
-        raise NotImplementedError
+        return False
 
     def load_validated_data(self, request, view):
         if view.action not in ("create", "update", "partial_update"):
@@ -323,15 +379,24 @@ class RecursiveChainProcessor(ChainProcessor):
     """
 
     next_chain_processor_class = None
+    recursive_chain_processor_kwargs = {}
 
     def __init__(self, *args, **kwargs):
-        super(RecursiveChainProcessor, self).__init__(*args, **kwargs)
-        self.next_chain_processor = self.next_chain_processor_class()
+        super(RecursiveChainProcessor, self).__init__()
+        default_kwargs = copy(self.recursive_chain_processor_kwargs)
+        default_kwargs.update(kwargs)
+        self.next_chain_processor = self.next_chain_processor_class(
+            **default_kwargs
+        )
 
-    def get_chains(self, request=None, view=None, obj=None):
-        return self.get_recursive_chains(request, view, obj)
+    def get_chains(self, request, view, obj=None):
+        return itertools.chain(
+            self.get_recursive_chains(request, view, obj),
+            super(RecursiveChainProcessor, self).get_chains(request, view,
+                                                            obj=obj)
+            )
 
-    def get_recursive_chains(self, request=None, view=None, obj=None):
+    def get_recursive_chains(self, request, view, obj=None):
         """
         Gets a permission chain by first finding all links to the next
         step in the chain, then calling the chain processor for the next links.
@@ -343,22 +408,16 @@ class RecursiveChainProcessor(ChainProcessor):
         """
 
         next_links = self.get_next_links(request, view, obj)
-        chains = []
 
         for l in next_links:
             next_chains = self.next_chain_processor.get_chains(
                 request, view, l)
             for c in next_chains:
-                chains.append(c + (l,))
+                yield c + (l,)
 
-        return chains
-
-    def get_next_links(self, request=None, view=None, obj=None):
+    def get_next_links(self, request, view, obj=None):
         """
-        Return a list of possible next links in the chain.  Each link is a
-        ``(next_obj, relationship)`` tuple, where ``next_obj`` is the next
-        object and ``relationship`` is application-specific data specifying
-        how this ``obj`` is related to ``next_obj``.
+        Return a list of possible next links in the chain.
 
         If the action is ``create``, then ``obj`` may be None and the processor
         must extract a hypothetical object from the request data and find
@@ -366,13 +425,21 @@ class RecursiveChainProcessor(ChainProcessor):
         """
         raise NotImplementedError
 
-    def get_chain_fragment(self, request=None, view=None):
-        return self.recursive_chain_fragment(request, view)
+    def get_chain_query(self, request, view):
+        fragment = super(RecursiveChainProcessor, self).get_chain_query(
+            request, view)
+        try:
+            return self.recursive_chain_query(request, view) | fragment
+        except InvalidChainException:
+            if fragment is not None:
+                return fragment
+            else:
+                raise
 
-    def recursive_chain_fragment(self, request=None, view=None):
-        next_prefixes = self.next_link_chain_prefixes(request, view)
+    def recursive_chain_query(self, request, view):
+        next_prefixes = self.query_prefixes(request, view)
         recursive_fragment = \
-            self.next_chain_processor.get_chain_fragment(request, view)
+            self.next_chain_processor.get_chain_query(request, view)
 
         updated_fragments = []
 
@@ -387,7 +454,7 @@ class RecursiveChainProcessor(ChainProcessor):
         else:
             raise InvalidChainException("No prefixes found")
 
-    def next_link_chain_prefixes(self, request=None, view=None):
+    def query_prefixes(self, request, view):
         """
         :returns A list of strings that can be used as prefixes to
                  QueryFragments.

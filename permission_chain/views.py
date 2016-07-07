@@ -58,6 +58,16 @@ class ChainViewMixin(object):
         return Response(serializer.data, status=status.HTTP_201_CREATED,
                         headers=headers)
 
+    def update(self, request, *args, **kwargs):
+        serializer = self.saved_serializer
+        self.check_object_permissions(request, serializer.instance)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
+
     def filter_queryset_by_chains(self, queryset, request, view=None):
         """
         Return a queryset filtered to only return objects that the user is
@@ -65,7 +75,7 @@ class ChainViewMixin(object):
         """
         return queryset.filter(
             self.chain_permission.chain_processor
-                .get_chain_fragment(request, view)
+                .get_chain_query(request, view)
                 .to_query_filter(request.user)
         ).distinct()
 
