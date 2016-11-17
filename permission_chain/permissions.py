@@ -135,17 +135,21 @@ def ChainPermission(*args, **kwargs):
 
     chain_filter_actions = kwargs.pop("chain_filter_actions", ALL_ACTION_NAMES)
 
+    create_actions = kwargs.pop("create_actions", ["create"])
+
+    list_actions = kwargs.pop("list_actions", ["list"])
+
     class CP(base_permission_class):
         def __init__(self, *args, **kwargs):
             super(CP, self).__init__(*args, **kwargs)
             self.chain_processor = chain_processor_class()
 
         def has_chain_permission(self, request, view):
-            if view.action == "create":
+            if view.action in create_actions:
                 return self.chain_processor.process(request, view)
-            elif view.action == "list":
+            elif view.action in list_actions:
                 # filtering allowed objects should occur in the viewset
-                return "list" in chain_filter_actions or \
+                return view.action in chain_filter_actions or \
                        self.chain_processor.process(request, view)
             else:
                 return False
