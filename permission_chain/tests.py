@@ -14,7 +14,7 @@ from permission_chain.permissions import ChainPermission, OBJECT_ACTIONS, \
     RecursiveChainProcessor, ALL_ACTION_NAMES, QueryFragment, \
     InvalidChainException, ChainProcessor
 from permission_chain.signals import get_additional_chains, \
-    get_additional_chain_fragments, process_additional_chain
+    get_additional_chain_queries, process_additional_chain
 from permission_chain.views import ChainViewMixin
 
 ALL_PERMS = {
@@ -485,7 +485,7 @@ class SignalTestCase(TestCase):
         get_additional_chains.connect(add_chain,
                                       sender=OneRecursiveChainProcessor,
                                       dispatch_uid="add_chain")
-        get_additional_chain_fragments.connect(
+        get_additional_chain_queries.connect(
             add_fragment,
             sender=ZeroRecursiveChainProcessor,
             dispatch_uid="add_fragment")
@@ -500,8 +500,8 @@ class SignalTestCase(TestCase):
 
     def tearDown(self):
         get_additional_chains.disconnect(add_chain, dispatch_uid="add_chain")
-        get_additional_chain_fragments.disconnect(add_fragment,
-                                                  dispatch_uid="add_fragment")
+        get_additional_chain_queries.disconnect(add_fragment,
+                                                dispatch_uid="add_fragment")
         process_additional_chain.disconnect(process_chain,
                                             dispatch_uid="process_chain")
 

@@ -5,7 +5,7 @@ from copy import copy
 
 from django.db.models import Q
 from permission_chain.signals import get_additional_chains, \
-    get_additional_chain_fragments, process_additional_chain
+    get_additional_chain_queries, process_additional_chain
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.generics import get_object_or_404
@@ -310,7 +310,7 @@ class ChainProcessor(object):
                                  if hasattr(c, "__iter__")])
 
     def get_chain_query(self, request, view):
-        result = get_additional_chain_fragments.send_robust(
+        result = get_additional_chain_queries.send_robust(
             self.__class__, processor=self,
             request=request, view=view
         )

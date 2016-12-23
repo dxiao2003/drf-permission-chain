@@ -10,7 +10,7 @@ get_additional_chains = Signal(providing_args=["processor", "request", "view",
 Receivers should return an iterator that produces chains.
 """
 
-get_additional_chain_fragments = Signal(
+get_additional_chain_queries = Signal(
     providing_args=["processor", "request", "view"]
 )
 
