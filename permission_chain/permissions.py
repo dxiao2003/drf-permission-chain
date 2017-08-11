@@ -323,7 +323,10 @@ class ChainProcessor(object):
         elif len(result) > 1:
             fragments = [r[1] for r in result
                          if isinstance(r[1], QueryFragment)]
-            return QueryFragment(*fragments, query_type=QueryFragment.OR)
+            if len(fragments) > 0:
+                return QueryFragment(*fragments, query_type=QueryFragment.OR)
+            else:
+                return None
         else:
             return None
 
