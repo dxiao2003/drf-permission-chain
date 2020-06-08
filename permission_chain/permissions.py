@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import itertools
 from copy import copy
+from six import string_types as basestring
 
 from django.db.models import Q
 from permission_chain.signals import get_additional_chains, \
@@ -83,11 +84,12 @@ def ConfigurablePermission(*args, **kwargs):
         if unconstrained_actions == "standard":
             staff_actions = ALL_ACTION_NAMES
 
-        object_actions = \
-            [a for a in OBJECT_ACTIONS
-             if a in (django_actions.keys() + unconstrained_actions +
-                      staff_actions)] + \
-             kwargs.pop("additional_object_actions", [])
+        @property
+        def object_actions(self):
+            return [a for a in OBJECT_ACTIONS if a in (list(self.django_actions.keys()) +
+                                                       self.unconstrained_actions +
+                                                       self.staff_actions)] + \
+                   kwargs.get("additional_object_actions", [])
 
         def is_allowed_django_action(self, view, action):
             return view.action == action and \
