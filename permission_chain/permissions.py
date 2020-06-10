@@ -212,7 +212,7 @@ class QueryFragment(object):
                 if not isinstance(v, QueryFragment):
                     raise TypeError("Only QueryFragments allowed")
 
-            self.values = set(values)
+            self.values = frozenset(values)
 
     def __and__(self, other):
         if not other:
@@ -232,6 +232,14 @@ class QueryFragment(object):
 
     def __invert__(self):
         return QueryFragment(self, query_type=QueryFragment.NOT)
+
+    def __hash__(self):
+        hash_value = hash(self.query_type)
+        if (self.query_type == QueryFragment.CONST) or \
+             (self.query_type == QueryFragment.NOT):
+            return hash_value + hash(self.value) + hash(tuple(sorted(self.kwargs.items())))
+        else:
+            return hash_value + hash(self.values) + hash(tuple(sorted(self.kwargs.items())))
 
     def __eq__(self, other):
         if not isinstance(other, QueryFragment):
